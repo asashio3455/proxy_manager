@@ -102,6 +102,73 @@ void setSystemProxy(const flutter::EncodableMap* args) {
     InternetSetOption(nullptr, INTERNET_OPTION_REFRESH, nullptr, 0);
 }
 
+void setProxyBypassDomains(const flutter::EncodableMap* args) {
+    INTERNET_PER_CONN_OPTION_LIST list;
+    DWORD dwBufSize = sizeof(list);
+    list.dwSize = sizeof(list);
+    list.pszConnection = nullptr;
+
+    auto domains = std::get<flutter::EncodableList>(args->at(flutter::EncodableValue("domains")));
+    
+    // Convert domain list to semicolon-separated string
+    std::string bypassString = "";
+    for (size_t i = 0; i < domains.size(); ++i) {
+        if (i > 0) bypassString += ";";
+        bypassString += std::get<std::string>(domains[i]);
+    }
+
+    auto wBypassString = std::wstring(bypassString.begin(), bypassString.end());
+    auto bypass_addr = new WCHAR[bypassString.length() + 1];
+    wcscpy_s(bypass_addr, bypassString.length() + 1, wBypassString.c_str());
+
+    list.dwOptionCount = 1;
+    list.pOptions = new INTERNET_PER_CONN_OPTION[1];
+
+    if (nullptr == list.pOptions) {
+        delete[] bypass_addr;
+        return;
+    }
+
+    // Set proxy bypass.
+    list.pOptions[0].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
+    list.pOptions[0].Value.pszValue = bypass_addr;
+
+    if (!InternetSetOption(nullptr, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwBufSize)) {
+        // Handle error
+    }
+
+    RASENTRYNAME entry;
+    entry.dwSize = sizeof(entry);
+    std::vector<RASENTRYNAME> entries;
+    DWORD size = sizeof(entry), count;
+    LPRASENTRYNAME entryAddr = &entry;
+    auto ret = RasEnumEntries(nullptr, nullptr, entryAddr, &size, &count);
+    if (ERROR_BUFFER_TOO_SMALL == ret) {
+        entries.resize(count);
+        entries[0].dwSize = sizeof(RASENTRYNAME);
+        entryAddr = entries.data();
+        ret = RasEnumEntries(nullptr, nullptr, entryAddr, &size, &count);
+    }
+    if (ERROR_SUCCESS != ret) {
+        delete[] list.pOptions;
+        delete[] bypass_addr;
+        return;
+    }
+
+    // Set bypass for each connectoid.
+    for (DWORD i = 0; i < count; ++i) {
+        list.pszConnection = entryAddr[i].szEntryName;
+        if (!InternetSetOption(nullptr, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwBufSize)) {
+            // Handle error
+        }
+    }
+
+    delete[] list.pOptions;
+    delete[] bypass_addr;
+    InternetSetOption(nullptr, INTERNET_OPTION_SETTINGS_CHANGED, nullptr, 0);
+    InternetSetOption(nullptr, INTERNET_OPTION_REFRESH, nullptr, 0);
+}
+
 void cleanSystemProxy() {
     INTERNET_PER_CONN_OPTION_LIST list;
     DWORD dwBufSize = sizeof(list);
@@ -111,8 +178,8 @@ void cleanSystemProxy() {
     list.pszConnection = nullptr;
     // clean
     //
-    list.dwOptionCount = 1;
-    list.pOptions = new INTERNET_PER_CONN_OPTION[1];
+    list.dwOptionCount = 2;
+    list.pOptions = new INTERNET_PER_CONN_OPTION[2];
 
     // Ensure that the memory was allocated.
     if (nullptr == list.pOptions)
@@ -123,6 +190,10 @@ void cleanSystemProxy() {
     // Set flags.
     list.pOptions[0].dwOption = INTERNET_PER_CONN_FLAGS;
     list.pOptions[0].Value.dwValue = PROXY_TYPE_DIRECT;
+    
+    // Clear proxy bypass domains
+    list.pOptions[1].dwOption = INTERNET_PER_CONN_PROXY_BYPASS;
+    list.pOptions[1].Value.pszValue = nullptr;
 
     // Set proxy for LAN.
     InternetSetOption(nullptr, INTERNET_OPTION_PER_CONNECTION_OPTION, &list, dwBufSize);
@@ -206,6 +277,11 @@ void ProxyManagerPlugin::HandleMethodCall(
   else if (method_call.method_name().compare("setSystemProxy") == 0) {
       auto* arguments = std::get_if<flutter::EncodableMap>(method_call.arguments());
       setSystemProxy(arguments);
+      result->Success();
+  }
+  else if (method_call.method_name().compare("setProxyBypassDomains") == 0) {
+      auto* arguments = std::get_if<flutter::EncodableMap>(method_call.arguments());
+      setProxyBypassDomains(arguments);
       result->Success();
   }
    else {

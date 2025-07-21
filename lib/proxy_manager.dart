@@ -65,6 +65,21 @@ class ProxyManager {
               ["-setsocksfirewallproxy", dev, url, "$port"]);
           break;
       }
+
+      await Process.run("/usr/sbin/networksetup", [
+        "-setproxybypassdomains",
+        dev,
+        "192.168.0.0/16",
+        "172.16.0.0/12",
+        "10.0.0.0/8",
+        "169.254.0.0/16",
+        "224.0.0.0/4",
+        "fe80::/10",
+        "ff00::/8",
+        "100.64.0.0/10",
+        "192.18.0.0/15",
+        "*.local"
+      ]);
     }
   }
 
@@ -81,12 +96,48 @@ class ProxyManager {
         Process.run("/usr/sbin/networksetup",
             ["-setsocksfirewallproxystate", dev, "off"]),
       ]);
+      
+      // Clear proxy bypass domains
+      await Process.run("/usr/sbin/networksetup", [
+        "-setproxybypassdomains",
+        dev,
+        "Empty"
+      ]);
     }
   }
 
   Future<void> _setAsSystemProxyWindows(
       ProxyTypes types, String url, int port) async {
-    ProxyManagerPlatform.instance.setSystemProxy(types, url, port);
+    await ProxyManagerPlatform.instance.setSystemProxy(types, url, port);
+    
+    // Set bypass domains for Windows
+    final bypassDomains = [
+      "192.168.*",
+      "172.16.*.*",
+      "172.17.*.*",
+      "172.18.*.*", 
+      "172.19.*.*",
+      "172.20.*.*",
+      "172.21.*.*",
+      "172.22.*.*",
+      "172.23.*.*",
+      "172.24.*.*",
+      "172.25.*.*",
+      "172.26.*.*",
+      "172.27.*.*",
+      "172.28.*.*",
+      "172.29.*.*",
+      "172.30.*.*",
+      "172.31.*.*",
+      "10.*",
+      "169.254.*",
+      "224.*",
+      "100.64.*.*",
+      "192.18.*.*",
+      "localhost",
+      "*.local"
+    ];
+    await ProxyManagerPlatform.instance.setProxyBypassDomains(bypassDomains);
   }
 
   void _setAsSystemProxyLinux(ProxyTypes types, String url, int port) {
@@ -157,6 +208,8 @@ class ProxyManager {
 
   Future<void> _cleanSystemProxyWindows() async {
     await ProxyManagerPlatform.instance.cleanSystemProxy();
+    // Clear bypass domains by setting empty list
+    await ProxyManagerPlatform.instance.setProxyBypassDomains([]);
   }
 
   void _cleanSystemProxyLinux() {

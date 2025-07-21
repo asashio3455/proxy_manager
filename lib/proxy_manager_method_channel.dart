@@ -29,4 +29,10 @@ class MethodChannelProxyManager extends ProxyManagerPlatform {
   Future<void> cleanSystemProxy() async {
     await methodChannel.invokeMethod('cleanSystemProxy');
   }
+
+  @override
+  Future<void> setProxyBypassDomains(List<String> domains) async {
+    await methodChannel.invokeMethod('setProxyBypassDomains',
+        <String, dynamic>{"domains": domains});
+  }
 }
