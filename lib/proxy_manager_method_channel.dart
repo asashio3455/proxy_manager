@@ -35,4 +35,10 @@ class MethodChannelProxyManager extends ProxyManagerPlatform {
     await methodChannel.invokeMethod('setProxyBypassDomains',
         <String, dynamic>{"domains": domains});
   }
+
+  @override
+  Future<void> setProxyBypassLocal(bool bypass) async {
+    await methodChannel.invokeMethod('setProxyBypassLocal',
+        <String, dynamic>{"bypass": bypass});
+  }
 }

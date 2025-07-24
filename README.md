@@ -20,4 +20,11 @@ await manager.setAsSystemProxy(ProxyTypes.http, "127.0.0.1", 1087);
 await manager.setAsSystemProxy(ProxyTypes.https, "127.0.0.1", 1087);
 // set a socks4/5 proxy
 await manager.setAsSystemProxy(ProxyTypes.socks, "127.0.0.1", 1080);
+
+// Windows specific: set proxy bypass for local addresses
+await manager.setProxyBypassLocal(true);  // Enable bypass for local addresses
+await manager.setProxyBypassLocal(false); // Disable bypass for local addresses
+
+// clean system proxy
+await manager.cleanSystemProxy();
 ```

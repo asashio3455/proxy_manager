@@ -43,4 +43,9 @@ abstract class ProxyManagerPlatform extends PlatformInterface {
   Future<void> setProxyBypassDomains(List<String> domains) async {
     throw UnimplementedError('setProxyBypassDomains() has not been implemented.');
   }
+
+  /// set proxy bypass local addresses for Windows
+  Future<void> setProxyBypassLocal(bool bypass) async {
+    throw UnimplementedError('setProxyBypassLocal() has not been implemented.');
+  }
 }

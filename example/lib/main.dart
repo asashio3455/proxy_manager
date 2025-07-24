@@ -54,10 +54,59 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Proxy Manager Example'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Running on: $_platformVersion\n'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await _proxyManagerPlugin.setAsSystemProxy(
+                    ProxyTypes.http, 
+                    '127.0.0.1', 
+                    8080
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Proxy set successfully'))
+                  );
+                },
+                child: const Text('Set HTTP Proxy (127.0.0.1:8080)'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await _proxyManagerPlugin.setProxyBypassLocal(true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bypass local addresses enabled'))
+                  );
+                },
+                child: const Text('Enable Bypass Local'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await _proxyManagerPlugin.setProxyBypassLocal(false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bypass local addresses disabled'))
+                  );
+                },
+                child: const Text('Disable Bypass Local'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  await _proxyManagerPlugin.cleanSystemProxy();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Proxy cleaned successfully'))
+                  );
+                },
+                child: const Text('Clean System Proxy'),
+              ),
+            ],
+          ),
         ),
       ),
     );
