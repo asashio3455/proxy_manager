@@ -39,8 +39,8 @@ void setSystemProxy(const flutter::EncodableMap* args) {
             url = "http://" + url;
         }
     } else if (type == "socks") {
-        if (url.find("socks5://") != 0) {
-            url = "socks5://" + url;
+        if (url.find("socks") != 0) {
+            url = "socks=" + url;
         }
     }
 
